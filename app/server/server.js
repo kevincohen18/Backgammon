@@ -4,7 +4,15 @@ var path = require('path');
 var express = require('express');
 var expressServer = express();
 var http = require('http').Server(expressServer);
-var io = require('socket.io')(http);
+var ServerIO = require('socket.io').Server;
+var allowedOrigin = process.env.CLIENT_ORIGIN || '*';
+var io = new ServerIO(http, {
+  cors: {
+    origin: allowedOrigin,
+    methods: ['GET', 'POST']
+  },
+  path: '/socket.io'
+});
 var comm = require('../../lib/comm.js');
 var model = require('../../lib/model.js');
 var queue_manager = require('./queue_manager.js');
@@ -196,7 +204,7 @@ function Server() {
     var host = process.env.OPENSHIFT_NODEJS_IP || comm.Protocol.BindAddress;
     var port = process.env.OPENSHIFT_NODEJS_PORT || process.env.PORT || comm.Protocol.Port;
     http.listen(port, host, function () {
-      console.log('listening on *:' + port);
+      console.log('listening on ' + host + ':' + port + ' (CORS origin: ' + allowedOrigin + ')');
     });
   };
   

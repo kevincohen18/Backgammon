@@ -354,4 +354,3 @@ $(document).ready(async () => {
     ToastNotification.error('Failed to load application. Please refresh the page.', 10000);
   }
 });
-

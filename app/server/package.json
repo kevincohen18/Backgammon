@@ -6,8 +6,11 @@
   "license": "MIT",
   "main": "server.js",
   "dependencies": {
-    "express": "^4.10.2",
+    "express": "^4.19.2",
     "mongodb": "^2.2.30",
-    "socket.io": "^1.4.5"
+    "socket.io": "^4.7.5"
+  },
+  "scripts": {
+    "start": "node server.js"
   }
 }

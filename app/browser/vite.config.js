@@ -15,18 +15,14 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vendor': ['jquery', 'bootstrap'],
-          'lib': ['../../../lib/client.js', '../../../lib/comm.js', '../../../lib/model.js'],
         },
       },
     },
-    sourcemap: false, // Disable in production for smaller bundles
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // Remove console.logs in production
-        drop_debugger: true,
-      },
+    commonjsOptions: {
+      include: [/lib/, /node_modules/],
     },
+    sourcemap: false, // Disable in production for smaller bundles
+    minify: 'esbuild',
     chunkSizeWarningLimit: 1000,
   },
   server: {
@@ -46,12 +42,6 @@ export default defineConfig({
     },
     extensions: ['.js', '.json'],
   },
-  optimizeDeps: {
-    include: ['jquery', 'bootstrap', 'clipboard', 'js-cookie'],
-    esbuildOptions: {
-      target: 'es2020',
-    },
-  },
   css: {
     postcss: {
       plugins: [
@@ -61,6 +51,8 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['jquery', 'bootstrap', 'clipboard', 'js-cookie'],
+    esbuildOptions: {
+      target: 'es2020',
+    },
   },
 });
-
