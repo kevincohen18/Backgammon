@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+bower_components/
+
+# Build outputs
+dist/
+*.log
+*.log.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Vite
+.vite/
+.vite-*
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+
+# Package manager locks (optional - uncomment if you want to ignore)
+# package-lock.json
+# yarn.lock

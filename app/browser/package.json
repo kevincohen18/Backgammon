@@ -1,0 +1,38 @@
+{
+  "name": "backgammon.js-client",
+  "version": "2.0.0",
+  "author": "quasoft <info@quasoft.net>",
+  "description": "Backgammon.js Client - Modernized 2026",
+  "license": "MIT",
+  "type": "module",
+  "main": "index.html",
+  "dependencies": {
+    "socket.io-client": "^4.7.5",
+    "bootstrap": "^5.3.3",
+    "@popperjs/core": "^2.11.8",
+    "clipboard": "^2.0.11",
+    "jquery": "^3.7.1",
+    "js-cookie": "^3.0.5"
+  },
+  "devDependencies": {
+    "vite": "^5.1.4",
+    "autoprefixer": "^10.4.18",
+    "postcss": "^8.4.35",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5",
+    "vitest": "^1.2.0",
+    "@testing-library/dom": "^9.3.4",
+    "@testing-library/jest-dom": "^6.1.5",
+    "jsdom": "^23.0.1"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint js/**/*.js",
+    "format": "prettier --write \"**/*.{js,css,html,json}\"",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
+  }
+}

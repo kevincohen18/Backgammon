@@ -1,0 +1,158 @@
+/* Modern CSS-based Dice Display */
+
+.die {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+  border: 2px solid #333;
+  border-radius: 8px;
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.die:hover {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 
+    0 6px 12px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.die.played {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(50%);
+}
+
+/* Dice dots using CSS */
+.die::before,
+.die::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #333;
+  border-radius: 50%;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Dice face patterns */
+.die[data-value="1"]::before {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.die[data-value="2"]::before {
+  top: 25%;
+  left: 25%;
+}
+
+.die[data-value="2"]::after {
+  bottom: 25%;
+  right: 25%;
+}
+
+.die[data-value="3"]::before {
+  top: 20%;
+  left: 20%;
+}
+
+.die[data-value="3"]::after {
+  bottom: 20%;
+  right: 20%;
+}
+
+.die[data-value="3"] {
+  background-image: radial-gradient(circle at 50% 50%, #333 2px, transparent 2px);
+  background-size: 100% 100%;
+}
+
+.die[data-value="4"]::before {
+  top: 25%;
+  left: 25%;
+}
+
+.die[data-value="4"]::after {
+  bottom: 25%;
+  right: 25%;
+}
+
+.die[data-value="4"] {
+  background-image: 
+    radial-gradient(circle at 25% 25%, #333 3px, transparent 3px),
+    radial-gradient(circle at 75% 75%, #333 3px, transparent 3px),
+    radial-gradient(circle at 25% 75%, #333 3px, transparent 3px),
+    radial-gradient(circle at 75% 25%, #333 3px, transparent 3px);
+  background-size: 50% 50%;
+}
+
+.die[data-value="5"] {
+  background-image: 
+    radial-gradient(circle at 25% 25%, #333 3px, transparent 3px),
+    radial-gradient(circle at 75% 75%, #333 3px, transparent 3px),
+    radial-gradient(circle at 25% 75%, #333 3px, transparent 3px),
+    radial-gradient(circle at 75% 25%, #333 3px, transparent 3px),
+    radial-gradient(circle at 50% 50%, #333 3px, transparent 3px);
+  background-size: 50% 50%, 50% 50%, 50% 50%, 50% 50%, 100% 100%;
+  background-position: top left, bottom right, bottom left, top right, center;
+}
+
+.die[data-value="6"] {
+  background-image: 
+    radial-gradient(circle at 25% 20%, #333 3px, transparent 3px),
+    radial-gradient(circle at 25% 50%, #333 3px, transparent 3px),
+    radial-gradient(circle at 25% 80%, #333 3px, transparent 3px),
+    radial-gradient(circle at 75% 20%, #333 3px, transparent 3px),
+    radial-gradient(circle at 75% 50%, #333 3px, transparent 3px),
+    radial-gradient(circle at 75% 80%, #333 3px, transparent 3px);
+  background-size: 50% 33.33%;
+  background-position: top left, center left, bottom left, top right, center right, bottom right;
+}
+
+/* Black dice variant */
+.die.black {
+  background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
+  border-color: #000;
+}
+
+.die.black::before,
+.die.black::after {
+  background: #fff;
+}
+
+.die.black[data-value] {
+  background-image: none;
+}
+
+.die.black[data-value]::before,
+.die.black[data-value]::after {
+  background: #fff;
+}
+
+/* Animation for dice roll */
+@keyframes diceRoll {
+  0% { transform: rotateX(0deg) rotateY(0deg); }
+  25% { transform: rotateX(90deg) rotateY(90deg); }
+  50% { transform: rotateX(180deg) rotateY(180deg); }
+  75% { transform: rotateX(270deg) rotateY(270deg); }
+  100% { transform: rotateX(360deg) rotateY(360deg); }
+}
+
+.die.rolling {
+  animation: diceRoll 0.6s ease-in-out;
+}
+
+/* 3D effect on hover */
+.die:hover {
+  transform: perspective(200px) rotateX(10deg) rotateY(10deg) scale(1.1);
+}
+
