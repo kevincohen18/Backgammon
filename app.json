@@ -1,7 +1,7 @@
 {
   "name": "backgammonjs",
   "description": "Extensible multiplayer backgammon game written in JavaScript.",
-  "repository": "https://github.com/quasoft/backgammonjs",
-  "website": "https://github.com/quasoft/backgammonjs",
+  "repository": "https://github.com/kevincohen18/Backgammon",
+  "website": "https://github.com/kevincohen18/Backgammon",
   "keywords": ["http", "javascript", "backgammon", "game", "multiplayer", "web", "socket"]
 }

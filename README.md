@@ -1,6 +1,8 @@
-# backgammon.js [![Build Status](https://travis-ci.org/quasoft/backgammonjs.svg?branch=master)](https://travis-ci.org/quasoft/backgammonjs)
+# Backgammon.js
 
-### Extensible multiplayer backgammon game written in JavaScript
+### Modern multiplayer backgammon game - Modernized from 2015 to 2026 standards
+
+**Repository:** [https://github.com/kevincohen18/Backgammon](https://github.com/kevincohen18/Backgammon)
 
 Current version: 0.6
 
@@ -26,7 +28,7 @@ If you want to learn more about the project see [Detailed documentation](docs/RE
 
 You can try the game locally or deploy it to your own server.
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/quasoft/backgammonjs/tree/heroku)
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/kevincohen18/Backgammon/tree/main)
 
 ## How to install
 
