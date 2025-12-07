@@ -3,9 +3,9 @@ import $ from 'jquery';
 import Cookies from 'js-cookie';
 import ClipboardJS from 'clipboard';
 import * as bootstrap from 'bootstrap';
-import cl from '../../../lib/client.js';
-import comm from '../../../lib/comm.js';
-import model from '../../../lib/model.js';
+import * as cl from '../../../lib/client.js';
+import * as comm from '../../../lib/comm.js';
+import * as model from '../../../lib/model.js';
 import '../../../lib/rules/rule.js';
 import '../../../lib/rules/RuleBgCasual.js';
 import '../../../lib/rules/RuleBgGulbara.js';
@@ -230,6 +230,41 @@ class App {
         this.setIsWaiting(false);
         this.updateView();
         ToastNotification.error('Failed to start game: ' + error.message);
+      }
+    });
+
+    $('#btn-play-bot').on('click', (e) => {
+      e.preventDefault();
+      console.log('Play bot button clicked');
+      try {
+        this.setIsChallenging(false);
+        this.setIsWaiting(true);
+        this.updateView();
+
+        const ruleName = this.getSelectedRuleName();
+        Cookies.set('selectedRule', ruleName, { expires: 30 });
+
+        if (!client || !client.reqPlayBot) {
+          throw new Error('Client not initialized or reqPlayBot method missing');
+        }
+
+        client.reqPlayBot(ruleName, (msg, clientMsgSeq, reply) => {
+          if (!reply || !reply.result) {
+            this.setIsWaiting(false);
+            this.updateView();
+            ToastNotification.error('Failed to start bot game. Please try again.');
+            return;
+          }
+          this.setIsWaiting(false);
+          this.setCurrentView('game');
+          this.updateView();
+          client.resizeUI();
+        });
+      } catch (error) {
+        console.error('Error starting bot game:', error);
+        this.setIsWaiting(false);
+        this.updateView();
+        ToastNotification.error('Failed to start bot game: ' + error.message);
       }
     });
 

@@ -1,3 +1,10 @@
+import * as comm from '../../../lib/comm.js';
+
+const defaultServerURL = import.meta.env.VITE_SERVER_URL || '';
+const fallbackServerURL = (typeof window !== 'undefined')
+  ? `${window.location.protocol}//${window.location.hostname}:${comm.Protocol.Port}`
+  : '';
+
 const config = {
   containerID: 'backgammon',
   boardUI: '../app/browser/js/SimpleBoardUI.js',
@@ -7,7 +14,7 @@ const config = {
     'RuleBgGulbara',
     'RuleBgTapa',
   ],
-  serverURL: window.location.host, // Socket.io will use current host, Vite proxy handles /socket.io
+  serverURL: defaultServerURL || fallbackServerURL,
 };
 
 // Make sure window is available

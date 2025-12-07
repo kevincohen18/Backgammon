@@ -4,7 +4,7 @@ const urlsToCache = [
   '/style/backgammon.css',
   '/style/ribbons.css',
   '/js/main.js',
-  '/images/background-photo.jpg',
+  '/background-photo.jpg',
 ];
 
 // Install event - cache resources
@@ -38,4 +38,3 @@ self.addEventListener('activate', (event) => {
     })
   );
 });
-

@@ -150,7 +150,18 @@ function Server() {
     
     this.restoreServer();
 
-    expressServer.use(express.static(path.join(__dirname, '../browser')));
+    // Serve built files from dist folder if it exists (production), otherwise serve source (development)
+    var distPath = path.join(__dirname, '../browser/dist');
+    var fs = require('fs');
+    if (fs.existsSync(distPath)) {
+      // Production: Serve built files from dist
+      expressServer.use(express.static(distPath));
+      console.log('Serving built files from dist folder');
+    } else {
+      // Development: Serve source files (requires Vite dev server for ES6 modules)
+      expressServer.use(express.static(path.join(__dirname, '../browser')));
+      console.log('Serving source files (use Vite dev server for ES6 modules)');
+    }
 
     io.on('connection', function (socket) {
       console.log('Client connected');
@@ -169,11 +180,12 @@ function Server() {
       // Subscribe for client requests:
       var m = comm.Message;
       var messages = [
-        m.CREATE_GUEST,
-        m.GET_MATCH_LIST,
-        m.PLAY_RANDOM,
-        m.CREATE_MATCH,
-        m.JOIN_MATCH,
+      m.CREATE_GUEST,
+      m.GET_MATCH_LIST,
+      m.PLAY_RANDOM,
+      m.PLAY_BOT,
+      m.CREATE_MATCH,
+      m.JOIN_MATCH,
         m.ROLL_DICE,
         m.MOVE_PIECE,
         m.CONFIRM_MOVES,
@@ -287,6 +299,9 @@ function Server() {
    * @param {Object} params - Object map with message parameters
    */
   this.sendMessage = function (socket, msg, params) {
+    if (!socket) {
+      return;
+    }
     console.log('Sending message ' + msg + ' to client ' + socket.id);
     socket.emit(msg, params);
   };
@@ -298,6 +313,9 @@ function Server() {
    * @param {Object} params - Object map with message parameters
    */
   this.sendPlayerMessage = function (player, msg, params) {
+    if (!player || !player.socketID) {
+      return;
+    }
     var socket = this.clients[player.socketID];
     this.sendMessage(socket, msg, params);
   };
@@ -378,6 +396,9 @@ function Server() {
     }
     else if (msg === comm.Message.CREATE_MATCH) {
       reply.result = this.handleCreateMatch(socket, params, reply);
+    }
+    else if (msg === comm.Message.PLAY_BOT) {
+      reply.result = this.handlePlayBot(socket, params, reply);
     }
     else if (msg === comm.Message.JOIN_MATCH) {
       reply.result = this.handleJoinMatch(socket, params, reply);
@@ -679,6 +700,79 @@ function Server() {
   };
 
   /**
+   * Handle client's request to play against a bot
+   * @param {Socket} socket - Client socket
+   * @param {Object} params - Request parameters
+   * @param {Object} reply - Object to be send as reply
+   * @returns {boolean} - Returns true if message have been processed
+   *                      successfully and a reply should be sent.
+   */
+  this.handlePlayBot = function (socket, params, reply) {
+    console.log('Creating bot match', params);
+
+    var player = this.getSocketPlayer(socket);
+    if (!player) {
+      reply.errorMessage = 'Player not found!';
+      return false;
+    }
+
+    if (params.ruleName === '*') {
+      params.ruleName = model.Utils.getRandomElement(this.config.enabledRules);
+    }
+
+    var rule = model.Utils.loadRule(params.ruleName);
+    var match = model.Match.createNew(rule);
+
+    // Human is host (white), bot is guest (black)
+    model.Match.addHostPlayer(match, player);
+    player.currentMatch = match.id;
+    player.currentPieceType = model.PieceType.WHITE;
+
+    var bot = model.Player.createNew();
+    bot.name = 'Robot';
+    bot.isBot = true;
+    bot.currentMatch = match.id;
+    bot.currentPieceType = model.PieceType.BLACK;
+    this.players.push(bot);
+    model.Match.addGuestPlayer(match, bot);
+
+    this.matches.push(match);
+
+    var game = model.Match.createNewGame(match, rule);
+    game.hasStarted = true;
+    game.turnPlayer = player; // Human starts
+    game.turnNumber = 1;
+
+    this.setSocketMatch(socket, match);
+    this.setSocketRule(socket, rule);
+
+    reply.player = player;
+    reply.ruleName = params.ruleName;
+    reply.matchID = match.id;
+
+    var self = this;
+    reply.sendAfter = function () {
+      self.sendMatchMessage(
+        match,
+        comm.Message.EVENT_MATCH_START,
+        {
+          'match': match
+        }
+      );
+
+      self.sendMatchMessage(
+        match,
+        comm.Message.EVENT_TURN_START,
+        {
+          'match': match
+        }
+      );
+    };
+
+    return true;
+  };
+
+  /**
    * Handle client's request to join a new match
    * @param {Socket} socket - Client socket
    * @param {Object} params - Request parameters
@@ -930,6 +1024,8 @@ function Server() {
           'match': match
         }
       );
+
+      this.startBotTurnIfNeeded(match);
     }
 
     return true;
@@ -1125,6 +1221,157 @@ function Server() {
       }
     }
     return null;
+  };
+
+  /**
+   * Trigger bot actions when it's the bot's turn.
+   * @param {Match} match - Match object
+   */
+  this.startBotTurnIfNeeded = function (match) {
+    var bot = match.guest && match.guest.isBot ? match.guest : null;
+    if (!bot || !match.currentGame || match.currentGame.turnPlayer.id !== bot.id) {
+      return;
+    }
+
+    var rule = model.Utils.loadRule(match.ruleName);
+    var game = match.currentGame;
+
+    // Roll dice for bot
+    var dice = rule.rollDice(game);
+    game.turnDice = dice;
+    model.Game.snapshotState(game);
+
+    this.sendMatchMessage(
+      match,
+      comm.Message.EVENT_DICE_ROLL,
+      {
+        'match': match
+      }
+    );
+
+    var stepsPlan = (rule.calculateMoveWeights(game.state, dice.movesLeft, bot.currentPieceType, null, true).playableMoves || []).slice();
+    if (stepsPlan.length === 0) {
+      stepsPlan = dice.movesLeft.slice();
+    }
+
+    for (var i = 0; i < stepsPlan.length; i++) {
+      var step = stepsPlan[i];
+      var pieceToMove = null;
+      for (var p = 0; p < game.state.pieces[bot.currentPieceType].length; p++) {
+        var candidate = game.state.pieces[bot.currentPieceType][p];
+        if (rule.validateMove(game, bot, candidate, step)) {
+          pieceToMove = candidate;
+          break;
+        }
+      }
+
+      if (!pieceToMove) {
+        continue;
+      }
+
+      var actions = rule.getMoveActions(game.state, pieceToMove, step);
+      if (actions.length === 0) {
+        continue;
+      }
+
+      rule.applyMoveActions(game.state, actions);
+      rule.markAsPlayed(game, step);
+      game.moveSequence++;
+
+      this.sendMatchMessage(
+        match,
+        comm.Message.EVENT_PIECE_MOVE,
+        {
+          'match': match,
+          'piece': pieceToMove,
+          'type': pieceToMove.type,
+          'steps': step,
+          'moveActionList': actions
+        }
+      );
+    }
+
+    // Try to confirm bot moves
+    if (rule.validateConfirm(game, bot)) {
+      if (rule.hasWon(game.state, bot)) {
+        this.finishBotGame(match, bot, false);
+        return;
+      }
+      rule.nextTurn(match);
+      this.sendMatchMessage(
+        match,
+        comm.Message.EVENT_TURN_START,
+        {
+          'match': match
+        }
+      );
+      this.startBotTurnIfNeeded(match);
+    } else {
+      // If bot couldn't play, just pass turn
+      rule.nextTurn(match);
+      this.sendMatchMessage(
+        match,
+        comm.Message.EVENT_TURN_START,
+        {
+          'match': match
+        }
+      );
+    }
+  };
+
+  /**
+   * Finish game when bot wins/loses without relying on socket context.
+   * @param {Match} match - Match
+   * @param {Player} winner - Winner player (bot or human)
+   * @param {boolean} resigned - Whether game ended with resignation
+   */
+  this.finishBotGame = function (match, winner, resigned) {
+    var rule = model.Utils.loadRule(match.ruleName);
+    var score = rule.getGameScore(match.currentGame.state, winner);
+    match.score[winner.currentPieceType] += score;
+
+    if (match.score[winner.currentPieceType] >= match.length) {
+      match.isOver = true;
+    }
+
+    if (match.isOver) {
+      this.sendMatchMessage(
+        match,
+        comm.Message.EVENT_MATCH_OVER,
+        {
+          'match': match,
+          'winner': winner,
+          'resigned': resigned
+        }
+      );
+    } else {
+      var game = model.Match.createNewGame(match, rule);
+      game.hasStarted = true;
+      game.turnPlayer = winner;
+      game.turnNumber = 1;
+
+      this.sendMatchMessage(
+        match,
+        comm.Message.EVENT_GAME_OVER,
+        {
+          'match': match,
+          'winner': winner,
+          'resigned': resigned
+        }
+      );
+
+      this.sendMatchMessage(
+        match,
+        comm.Message.EVENT_GAME_RESTART,
+        {
+          'match': match.currentGame,
+          'game': match.currentGame,
+          'resigned': resigned
+        }
+      );
+
+      this.startBotTurnIfNeeded(match);
+    }
   };
 
 }
